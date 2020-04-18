@@ -428,6 +428,17 @@ namespace k8s.Fluent
 		/// <summary>Sets the Kubernetes namespace to access, or null or empty to not access a namespaced object.</summary>
 		public KubernetesRequest Namespace(string ns) { _ns = NormalizeEmpty(ns); return this; }
 
+		/// <summary>Gets whether to use the old-style Kubernetes watch (e.g. /api/v1/watch/...) rather than the new-style watch.</summary>
+		public bool OldStyleWatch() => _oldStyleWatch;
+
+		/// <summary>Sets whether to use the old-style Kubernetes watch (e.g. /api/v1/watch/...) rather than the new-style watch.</summary>
+		/// <remarks>If set to false (the default), Kubernetes requires you to use a list request combined with a field selector to watch
+		/// a single item. If set to true, you can watch an item with a GET request to the specific item. If used with the the
+		/// <see cref="Watch{T}"/> class, it's generally not necessary to set this property because the watch class will usually apply a
+		/// suitable default.
+		/// </remarks>
+		public KubernetesRequest OldStyleWatch(bool value) { _oldStyleWatch = value; return this; }
+
 		/// <summary>Opens a <see cref="SPDYConnection"/> to the resource described by the request, but does not send the body.</summary>
 		/// <returns>Returns the <see cref="SPDYConnection"/> and the response headers.</returns>
 		public async Task<ValueTuple<SPDYConnection, HttpResponseHeaders>> OpenSPDYAsync(CancellationToken cancelToken = default)
@@ -632,6 +643,17 @@ namespace k8s.Fluent
 		/// <inheritdoc/>
 		public override string ToString() => Method().Method + " " + GetRequestUri();
 
+		/// <summary>Creates a <see cref="Watch{T}"/> that watches for changes to the item or list of items represented by this request.</summary>
+		/// <typeparam name="T">The type of item to watch for changes to</typeparam>
+		/// <param name="initialVersion">The initial version to watch for. This will be used to set the <see cref="WatchVersion(string)"/>
+		/// before creating the watch. If null or empty, the watch will start from the current version. The default is null.
+		/// </param>
+		/// <param name="isListWatch">Indicates whether the request will return a list of possibly multiple items (true) or only a single item
+		/// (false). If null, the default value will be false if <see cref="Name()"/> is set and true if <see cref="Name()"/> is not set.
+		/// </param>
+		public Watch<T> ToWatch<T>(string initialVersion = null, bool? isListWatch = null) where T : IKubernetesObject, IMetadata<V1ObjectMeta>
+			=> new Watch<T>(this, initialVersion, isListWatch);
+
 		/// <summary>Gets the resource type access (e.g. "pods").</summary>
 		public string Type() => _type;
 
@@ -833,6 +855,7 @@ namespace k8s.Fluent
 				if(_group != null) sb.Append("apis/").Append(_group);
 				else sb.Append("api");
 				sb.Append('/').Append(_version ?? "v1");
+				if(_oldStyleWatch) sb.Append("/watch");
 				if(_ns != null) sb.Append("/namespaces/").Append(_ns);
 				sb.Append('/').Append(_type);
 				if(_name != null) sb.Append('/').Append(_name);
@@ -871,7 +894,7 @@ namespace k8s.Fluent
 		object _body;
 		HttpMethod _method;
 		KubernetesScheme _scheme;
-		bool _streamResponse;
+		bool _oldStyleWatch, _streamResponse;
 
 		static string CheckHeaderName(string name)
 		{

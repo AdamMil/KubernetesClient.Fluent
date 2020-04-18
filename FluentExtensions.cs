@@ -74,7 +74,7 @@ namespace k8s.Fluent
 			return sw.ToString();
 		}
 
-		/// <summary>Gets the <see cref="JsonSerializerSettings"/> used to serialize and deserialize Kubernetes objects.</summary>
+		/// <summary>Gets the <see cref="JsonSerializer"/> used to serialize and deserialize Kubernetes objects.</summary>
 		internal static readonly JsonSerializer DefaultSerializer = JsonSerializer.Create(CreateSerializerSettings());
 
 		/// <summary>Creates the JSON serializer settings used for serializing request bodies and deserializing responses.</summary>
