@@ -1,6 +1,7 @@
 # KubernetesClient.Fluent
 This library extents the [C# Kubernetes client](https://github.com/kubernetes-client/csharp) with a fluent interface, convenient model
-extensions, improved watches, and improved exec support.
+extensions, improved watches, and improved exec support. It is available as Nuget package
+[KubernetesClient.Fluent](https://www.nuget.org/packages/KubernetesClient.Fluent/).
 
 ## Fluent Interface
 The library adds a fluent API that is concise, flexible, and works well with custom resources and custom actions. The basic flow is that
