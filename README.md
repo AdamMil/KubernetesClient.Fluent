@@ -1,5 +1,5 @@
 # KubernetesClient.Fluent
-This library extents the [C# Kubernetes client](https://github.com/kubernetes-client/csharp) with a fluent interface, convenient model
+This library extends the [C# Kubernetes client](https://github.com/kubernetes-client/csharp) with a fluent interface, convenient model
 extensions, improved watches, and improved exec support. It is available as Nuget package
 [KubernetesClient.Fluent](https://www.nuget.org/packages/KubernetesClient.Fluent/).
 
@@ -74,10 +74,10 @@ The library adds many useful model extension methods that make the Kubernetes cl
 
 * Managing owner and object references
   * o.AddOwnerReference(ownerRef) // adds an owner reference
+  * o.CreateObjectReference() // creates an object reference to o
   * o.CreateOwnerReference(...) // create an owner reference to o
   * o.FindOwnerReference(owner) // finds and returns the reference to 'owner', if any
   * o.GetController() // gets the reference to the owner that controls the resource
-  * o.GetObjectReference() // creates an object reference to o
   * ownerRef.Matches(o) // does ownerRef refer to o?
   * objRef.Matches(o) // does objRef refer to o?
   * ...
@@ -91,7 +91,7 @@ of items as opposed to a single item you can't easily do that because the correc
 stream itself and must be retrieved from a list request. Support for resuming and for watching multiple items must be built on top, but
 the KubernetesClient Watcher object doesn't have a good interface for building on top of.
 
-The library provides two watch interfaces.
+To address these problems, this library provides two watch interfaces.
 
 * WatchReader\<T\> -- This class provides the events from a single watch request. It uses a pull-based interface.
       
@@ -124,6 +124,6 @@ The library provides two watch interfaces.
   ````
 
 ## Improved Exec Support
-The library adds improved exec support. The existing exec support uses web sockets, which
+The library adds improved exec support. The KubernetesClient exec support uses web sockets, which
 [has a flawed protocol](https://github.com/kubernetes/kubernetes/issues/89899) leading to some commands running forever.
 You can simply use `request.ExecuteCommandAsync` to execute a command on a resource -- usually but not necessarily a pod.
