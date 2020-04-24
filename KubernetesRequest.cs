@@ -211,6 +211,8 @@ namespace k8s.Fluent
 		/// <returns>Returns a <see cref="V1Status"/> indicating the result of the command execution. The <see cref="V1Status.Code"/>
 		/// property will contain the exit code, or -1 if the exit code is unknown.
 		/// </returns>
+		/// <exception cref="KubernetesException">Thrown if <paramref name="throwOnFailure"/> is true and the command fails</exception>
+		/// <exception cref="TimeoutException">Thrown if the command times out</exception>
 		public async Task<V1Status> ExecCommandAsync(
 			string command, string[] args = null, string container = null, Stream stdout = null, Stream stderr = null,
 			bool tty = false, int timeoutMs = Timeout.Infinite, bool throwOnFailure = true, CancellationToken cancelToken = default)
@@ -292,8 +294,11 @@ namespace k8s.Fluent
 		{
 			if(_watchVersion != null) throw new InvalidOperationException("Watch requests cannot be deserialized all at once.");
 			cancelToken.ThrowIfCancellationRequested();
-			HttpRequestMessage reqMsg = await CreateRequestMessage(cancelToken).ConfigureAwait(false);
-			return await ExecuteMessageAsync<T>(reqMsg, throwIfMissing, cancelToken).ConfigureAwait(false);
+			HttpRequestMessage msg = await CreateRequestMessage(cancelToken).ConfigureAwait(false);
+			KubernetesResponse resp = new KubernetesResponse(await client.SendAsync(msg, cancelToken).ConfigureAwait(false));
+			if(resp.IsNotFound && !throwIfMissing) return default(T);
+			else if(resp.IsError) throw new KubernetesException(await resp.GetStatusAsync().ConfigureAwait(false));
+			else return await resp.GetBodyAsync<T>().ConfigureAwait(false);
 		}
 
 		/// <summary>Gets the "fieldManager" query-string parameter, or null if there is no field manager.</summary>
@@ -317,7 +322,7 @@ namespace k8s.Fluent
 			List<string> values = null;
 			if(headers != null) headers.TryGetValue(key, out values);
 			return values == null || values.Count == 0 ? null : values.Count == 1 ? values[0] :
-				throw new InvalidOperationException($"There are multiple query-string parameters named '{key}'.");
+				throw new InvalidOperationException($"There are multiple values for the header named '{key}'.");
 		}
 
 		/// <summary>Gets the values of the named custom header, or null if it has no values.</summary>
@@ -441,6 +446,7 @@ namespace k8s.Fluent
 
 		/// <summary>Opens a <see cref="SPDYConnection"/> to the resource described by the request, but does not send the body.</summary>
 		/// <returns>Returns the <see cref="SPDYConnection"/> and the response headers.</returns>
+		/// <exception cref="KubernetesException">Thrown if the request fails or cannot be upgraded</exception>
 		public async Task<ValueTuple<SPDYConnection, HttpResponseHeaders>> OpenSPDYAsync(CancellationToken cancelToken = default)
 		{
 			cancelToken.ThrowIfCancellationRequested();
@@ -466,6 +472,7 @@ namespace k8s.Fluent
 #if NETCOREAPP2_1 || NETSTANDARD2_1
 		/// <summary>Opens a <see cref="WebSocket"/> to the resource described by the request, but does not send the body.</summary>
 		/// <returns>Returns the <see cref="WebSocket"/> and the response headers.</returns>
+		/// <exception cref="KubernetesException">Thrown if the request fails or cannot be upgraded</exception>
 		public async Task<ValueTuple<WebSocket, HttpResponseHeaders>> OpenWebSocketAsync(string subprotocol = null, CancellationToken cancelToken = default)
 		{
 			cancelToken.ThrowIfCancellationRequested();
@@ -547,6 +554,7 @@ namespace k8s.Fluent
 		/// returned in that case.
 		/// </param>
 		/// <param name="cancelToken">A <see cref="CancellationToken"/> that can be used to cancel the request</param>
+		/// <exception cref="KubernetesException">Thrown if a request fails</exception>
 		public async Task<T> ReplaceAsync<T>(
 			T obj, Func<T, CancellationToken, Task<bool>> modify, bool throwIfMissing = false, CancellationToken cancelToken = default)
 			where T : class
@@ -823,15 +831,6 @@ namespace k8s.Fluent
 				}
 			}
 			return req;
-		}
-
-		async Task<T> ExecuteMessageAsync<T>(HttpRequestMessage msg, bool throwIfMissing, CancellationToken cancelToken)
-		{
-			cancelToken.ThrowIfCancellationRequested();
-			KubernetesResponse resp = new KubernetesResponse(await client.SendAsync(msg, cancelToken).ConfigureAwait(false));
-			if(resp.IsNotFound && !throwIfMissing) return default(T);
-			else if(resp.IsError) throw new KubernetesException(await resp.GetStatusAsync().ConfigureAwait(false));
-			else return await resp.GetBodyAsync<T>().ConfigureAwait(false);
 		}
 
 		string GetRequestUri()

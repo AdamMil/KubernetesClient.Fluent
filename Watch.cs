@@ -203,6 +203,7 @@ namespace k8s.Fluent
 				catch(Exception ex)
 				{
 					Error?.Invoke(this, ex, null);
+					if(wasOpen) { Closed?.Invoke(this); wasOpen = false; } // invoke Closed before the delay for more accurate event timing
 					try { await Task.Delay(OpenRetryTime, cts.Token).ConfigureAwait(false); }
 					catch(OperationCanceledException) { }
 				}
@@ -274,6 +275,8 @@ namespace k8s.Fluent
 		/// <summary>Reads the next <see cref="WatchEvent{T}"/> from the stream, or returns null if the stream was closed or
 		/// <see cref="IsError"/> is true.
 		/// </summary>
+		/// <exception cref="EndOfStreamException">Thrown if the stream ends in the middle of a watch event</exception>
+		/// <exception cref="JsonSerializationException">Thrown if the stream does not contain valid watch events</exception>
 		public async Task<WatchEvent<T>> ReadAsync(CancellationToken cancelToken = default)
 		{
 			if(IsError) return null;

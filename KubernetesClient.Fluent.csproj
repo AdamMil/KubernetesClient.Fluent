@@ -8,6 +8,7 @@
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<IncludeSymbols>true</IncludeSymbols>
 		<LangVersion>7.3</LangVersion>
+		<NoWarn>NU1701</NoWarn> <!-- hide annoying warnings from Zlib.Portable -->
 		<PackageLicenseExpression>LGPL-2.1-or-later OR Apache-2.0</PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/AdamMil/KubernetesClient.Fluent</PackageProjectUrl>
 		<PackageTags>kubernetes;client;fluent</PackageTags>
@@ -19,9 +20,9 @@
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<TargetFrameworks>netstandard2.0;netstandard2.1;net452;netcoreapp2.1</TargetFrameworks>
 		<TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netstandard2.0;netstandard2.1;netcoreapp2.1</TargetFrameworks>
-		<AssemblyVersion>1.0.1.0</AssemblyVersion>
-		<FileVersion>1.0.1.0</FileVersion>
-		<Version>1.0.1</Version>
+		<AssemblyVersion>1.0.0.0</AssemblyVersion> <!-- the assembly version is the major version only -->
+		<FileVersion>1.0.2.0</FileVersion>
+		<Version>1.0.2</Version>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="KubernetesClient" Version="2.0.6" />

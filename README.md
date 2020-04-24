@@ -18,10 +18,10 @@ then these expressions create different types of requests:
     c.Request(pod).Status().Put() // update a pod's status
     c.Request(pod).Subresource("log") // read a pod's logs
     c.Request(pod).Put().DryRun(true) // simulate replacing a resource
-    c.Request().RawUri("/apis/…") // specify a raw URL
+    c.Request().RawUri("/apis/...") // specify a raw URL
     etc...
 
-It works with both built-in and custom resource type. For advanced operations, you can:
+It works with both built-in and custom resource types. For advanced operations, you can:
 
 * Use custom resource types and HTTP verbs
 * Modify request and content headers
@@ -118,7 +118,7 @@ The library provides two watch interfaces.
   var w = new Watch<V1Pod>(request); // or use request.ToWatch<T>()
   w.EventReceived += ...;
   w.Run();
-  …
+  ...
   w.Dispose(); // or, give it a cancellation token and cancel it
   // if you need to know exactly when it stops you can await the task returned from Run()
   ````

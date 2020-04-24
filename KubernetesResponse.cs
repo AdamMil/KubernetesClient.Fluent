@@ -43,6 +43,7 @@ namespace k8s.Fluent
 		/// <param name="throwIfEmpty">If false, an empty response body will be returned as null. If true, an exception will be thrown if
 		/// the body is empty. The default is false.
 		/// </param>
+		/// <exception cref="InvalidOperationException">Thrown if <paramref name="throwIfEmpty"/> is true and the response body was empty</exception>
 		public async Task<object> GetBodyAsync(Type type, bool throwIfEmpty = false)
 		{
 			string body = await GetBodyAsync().ConfigureAwait(false);
@@ -60,6 +61,7 @@ namespace k8s.Fluent
 		/// <param name="throwIfEmpty">If false, an empty response body will be returned as the default value of type
 		/// <typeparamref name="T"/>. If true, an exception will be thrown if the body is empty. The default is false.
 		/// </param>
+		/// <exception cref="InvalidOperationException">Thrown if <paramref name="throwIfEmpty"/> is true and the response body was empty</exception>
 		public async Task<T> GetBodyAsync<T>(bool throwIfEmpty = false)
 		{
 			string body = await GetBodyAsync().ConfigureAwait(false);

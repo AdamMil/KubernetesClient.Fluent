@@ -9,6 +9,8 @@ using k8s.Models;
 using Newtonsoft.Json;
 using SPDY;
 
+// TODO: add port mapping
+
 namespace k8s
 {
 	/// <summary>Implements the Kubernetes exec protocol on top of a <see cref="SPDYConnection"/>.</summary>
@@ -21,6 +23,7 @@ namespace k8s
 		/// <param name="stdout">A stream containing data to receive from standard output, or null if no data should be received</param>
 		/// <param name="stderr">A stream containing data to receive from the standard error stream, or null if no data should be received</param>
 		/// <remarks>The set of streams passed to this method must match the set of streams described in the HTTP request to Kubernetes.</remarks>
+		/// <exception cref="NotSupportedException">Thrown if the protocol version header is missing or unsupported</exception>
 		public SPDYExec(SPDYConnection conn, System.Net.Http.Headers.HttpHeaders headers,
 			Stream stdin = null, Stream stdout = null, Stream stderr = null)
 		{
@@ -55,10 +58,13 @@ namespace k8s
 		/// <returns>Returns a <see cref="V1Status"/> object describing the result of executing the command. The <see cref="V1Status.Code"/>
 		/// property will contain the command's exit code if known, or -1 if unknown.
 		/// </returns>
+		/// <exception cref="OperationCanceledException">Thrown if the <paramref name="cancelToken"/> is canceled</exception>
+		/// <exception cref="TimeoutException">Thrown if the timeout expires</exception>
 		public async Task<V1Status> RunAsync(int timeoutMs, CancellationToken cancelToken = default)
 		{
 			if(timeoutMs < -1) throw new ArgumentOutOfRangeException(nameof(timeoutMs), "Must be non-negative or Timeout.Infinite.");
 			SPDYStream error = null, stdin = null, stdout = null, stderr = null;
+			CancellationToken origToken = cancelToken;
 			CancellationTokenSource cts = null;
 			if(timeoutMs >= 0)
 			{
@@ -128,6 +134,11 @@ namespace k8s
 				}
 				await runTask.ConfigureAwait(false); // wait for the SPDY client to shut down gracefully
 				return status;
+			}
+			catch(OperationCanceledException ex)
+			{
+				if(timeoutMs >= 0 && !origToken.IsCancellationRequested) throw new TimeoutException("The command timed out.", ex);
+				throw;
 			}
 			finally
 			{
