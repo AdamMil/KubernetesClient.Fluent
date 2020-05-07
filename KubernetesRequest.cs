@@ -379,6 +379,20 @@ namespace k8s.Fluent
 		}
 
 		/// <summary>Attempts to set the <see cref="Group()"/>, <see cref="Version()"/>, and <see cref="Type()"/> based on a Kubernetes
+		/// API version (including the API group) and kind. The method uses heuristics and may not work in all cases.
+		/// </summary>
+		public KubernetesRequest GVK(string apiVersion, string kind)
+		{
+			string group = null, version = apiVersion;
+			if(!string.IsNullOrEmpty(apiVersion))
+			{
+				int slash = apiVersion.IndexOf('/');
+				if(slash >= 0) (group, version) = (apiVersion.Substring(0, slash), apiVersion.Substring(slash+1));
+			}
+			return GVK(group, version, kind);
+		}
+
+		/// <summary>Attempts to set the <see cref="Group()"/>, <see cref="Version()"/>, and <see cref="Type()"/> based on a Kubernetes
 		/// group, version, and kind. The method uses heuristics and may not work in all cases.
 		/// </summary>
 		public KubernetesRequest GVK(string group, string version, string kind) =>
