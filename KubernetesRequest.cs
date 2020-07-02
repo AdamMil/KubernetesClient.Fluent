@@ -714,7 +714,8 @@ namespace k8s.Fluent
 			{
 				this.responseStream = responseStream; // keep a reference to the response stream to prevent it from being garbage-collected
 				const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-				object o = responseStream.GetType().BaseType.GetField("innerStream", Flags)?.GetValue(responseStream); // ReadOnlyStream -> WebExceptionWrapperStream
+				Type baseType = responseStream.GetType().BaseType;
+				object o = (baseType.GetField("innerStream", Flags) ?? baseType.GetField("_innerStream"))?.GetValue(responseStream); // ReadOnlyStream -> WebExceptionWrapperStream
 				o = o?.GetType().BaseType.GetField("innerStream", Flags)?.GetValue(o); // WebExceptionWrapperStream -> ConnectStream
 				o = o?.GetType().GetProperty("Connection", Flags)?.GetValue(o); // ConnectStream -> Connection
 				rawStream = (Stream)o?.GetType().GetProperty("NetworkStream", Flags)?.GetValue(o); // Connection -> NetworkStream

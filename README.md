@@ -46,6 +46,8 @@ To assist with modifying resources, it supports an atomic get-modify-update oper
 
 ## Convenient Model Extensions
 The library adds many useful model extension methods that make the Kubernetes client smoother and more concise to use.
+(Most of these were [merged into the official client](https://github.com/kubernetes-client/csharp/pull/405), but I'll leave these
+examples here.)
 
 * Metadata is inlined, so instead of o.Metadata.X, you can use o.X(). Examples:
 
