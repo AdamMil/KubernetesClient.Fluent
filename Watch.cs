@@ -29,7 +29,7 @@ namespace k8s.Fluent
 		/// </remarks>
 		public Watch(KubernetesRequest request, string initialVersion = null, bool? isListWatch = null, bool exactRequest = false)
 		{
-			this.req = request?.Clone() ?? throw new ArgumentNullException();
+			this.req = request?.Clone() ?? throw new ArgumentNullException(nameof(request));
 			IsListWatch = isListWatch ?? req.Name() == null;
 			if(!exactRequest)
 			{

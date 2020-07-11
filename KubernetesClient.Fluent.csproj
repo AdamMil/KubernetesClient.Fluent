@@ -21,11 +21,11 @@
 		<TargetFrameworks>netstandard2.0;netstandard2.1;net452;netcoreapp2.1</TargetFrameworks>
 		<TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netstandard2.0;netstandard2.1;netcoreapp2.1</TargetFrameworks>
 		<AssemblyVersion>1.0.0.0</AssemblyVersion> <!-- the assembly version is the major version only -->
-		<FileVersion>1.0.4.0</FileVersion>
-		<Version>1.0.4</Version>
+		<FileVersion>1.0.5.0</FileVersion>
+		<Version>1.0.5</Version>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="KubernetesClient" Version="2.0.26" />
-		<PackageReference Include="SPDY.net" Version="1.0.1" />
+		<PackageReference Include="SPDY.net" Version="1.0.3" />
 	</ItemGroup>
 </Project>

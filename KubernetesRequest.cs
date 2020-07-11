@@ -241,9 +241,12 @@ namespace k8s.Fluent
 			// open the SPDY connection and execute the command. we use SPDY because of a flaw in the Kubernetes web sockets protocol:
 			// https://github.com/kubernetes/kubernetes/issues/89899
 			var (spdyConn, headers) = await req.OpenSPDYAsync(cancelToken).ConfigureAwait(false);
-			V1Status status = await new SPDYExec(spdyConn, headers, stdin, stdout, stderr).RunAsync(timeoutMs, cancelToken).ConfigureAwait(false);
-			if(throwOnFailure && status.Status == "Failure") throw new KubernetesException(status);
-			return status;
+			using(var exec = new SPDYExec(spdyConn, headers, stdin, stdout, stderr))
+			{
+				V1Status status = await exec.RunAsync(timeoutMs, cancelToken).ConfigureAwait(false);
+				if(throwOnFailure && status.Status == "Failure") throw new KubernetesException(status);
+				return status;
+			}
 		}
 
 		/// <summary>Executes the request and returns a <see cref="KubernetesResponse"/>. The request can be executed multiple times,
@@ -295,10 +298,12 @@ namespace k8s.Fluent
 			if(_watchVersion != null) throw new InvalidOperationException("Watch requests cannot be deserialized all at once.");
 			cancelToken.ThrowIfCancellationRequested();
 			HttpRequestMessage msg = await CreateRequestMessage(cancelToken).ConfigureAwait(false);
-			KubernetesResponse resp = new KubernetesResponse(await client.SendAsync(msg, cancelToken).ConfigureAwait(false));
-			if(resp.IsNotFound && !throwIfMissing) return default(T);
-			else if(resp.IsError) throw new KubernetesException(await resp.GetStatusAsync().ConfigureAwait(false));
-			else return await resp.GetBodyAsync<T>().ConfigureAwait(false);
+			using(KubernetesResponse resp = new KubernetesResponse(await client.SendAsync(msg, cancelToken).ConfigureAwait(false)))
+			{
+				if(resp.IsNotFound && !throwIfMissing) return default(T);
+				else if(resp.IsError) throw new KubernetesException(await resp.GetStatusAsync().ConfigureAwait(false));
+				else return await resp.GetBodyAsync<T>().ConfigureAwait(false);
+			}
 		}
 
 		/// <summary>Gets the "fieldManager" query-string parameter, or null if there is no field manager.</summary>
@@ -586,12 +591,14 @@ namespace k8s.Fluent
 				cancelToken.ThrowIfCancellationRequested();
 				// if the resource is missing or no changes are needed, return it as-is. otherwise, update it with a PUT request
 				if(obj == null || !await modify(obj, cancelToken).ConfigureAwait(false)) return obj;
-				KubernetesResponse resp = await req.Put().Body(obj).ExecuteAsync(cancelToken).ConfigureAwait(false);
-				if(resp.StatusCode != HttpStatusCode.Conflict) // if there was no conflict, return the result
+				using(KubernetesResponse resp = await req.Put().Body(obj).ExecuteAsync(cancelToken).ConfigureAwait(false))
 				{
-					if(resp.IsNotFound && !throwIfMissing) return null;
-					else if(resp.IsError) throw new KubernetesException(await resp.GetStatusAsync().ConfigureAwait(false));
-					else return await resp.GetBodyAsync<T>().ConfigureAwait(false);
+					if(resp.StatusCode != HttpStatusCode.Conflict) // if there was no conflict, return the result
+					{
+						if(resp.IsNotFound && !throwIfMissing) return null;
+						else if(resp.IsError) throw new KubernetesException(await resp.GetStatusAsync().ConfigureAwait(false));
+						else return await resp.GetBodyAsync<T>().ConfigureAwait(false);
+					}
 				}
 				obj = null; // otherwise, there was a conflict, so reload the item
 			}
